@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cardbook — Working App (Local)</title>
+<style>
+:root{--primary:#0E7C6B;--ink:#14201D;--muted:#5C6B67;--border:#C9D9F2;--green:#1A9E5C;--amber:#C77D0A;--red:#C93A3A}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#EAF4FF,#DCEBFF);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}
+.wrap{max-width:620px;margin:0 auto;padding:16px}
+.card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px;margin:12px 0;box-shadow:0 8px 24px rgba(46,100,180,.12)}
+h1{color:#0B4EA2;margin:6px 0}h2{color:#0B4EA2;margin:8px 0}.muted{color:var(--muted);font-size:14px}
+.btn{width:100%;min-height:56px;border:0;border-radius:16px;font-size:18px;font-weight:800;margin:8px 0;cursor:pointer}
+.p{background:linear-gradient(135deg,#12A68F,#0E7C6B);color:#fff}.g{background:#fff;color:var(--primary);border:2px solid var(--primary)}
+.row{display:flex;gap:10px}.row>*{flex:1}
+select,input{min-height:56px;width:100%;font-size:17px;border-radius:12px;border:2px solid var(--border);padding:0 12px;background:#fff}
+.qty{display:flex;gap:10px;align-items:center;margin:8px 0}.qty button{width:56px;height:56px;font-size:26px;border-radius:14px;border:2px solid var(--primary);background:#fff;color:var(--primary);font-weight:800}.qty div{flex:1;text-align:center;font-size:20px;font-weight:800}
+.pill{display:inline-block;padding:6px 12px;border-radius:999px;font-weight:800}.green{background:#E3F5EB;color:#0E6B3E}.amber{background:#FDF0D9;color:#8A5600}.red{background:#FBE5E5;color:#8F1F1F}
+table{width:100%;border-collapse:collapse;font-size:15px}td,th{border-bottom:1px solid #E3ECF7;padding:8px;text-align:left}
+.small{font-size:13px}
+</style>
+</head>
+<body><div class="wrap">
+<div class="card" style="background:linear-gradient(135deg,#0B4EA2,#12A68F);color:#fff;border:0">
+<h1 style="color:#fff;margin:0">Cardbook</h1>
+<p style="font-size:18px;font-weight:700;margin:8px 0">The daily sales book for branch pharmacies — replaces paper, catches mistakes the same day.</p>
+<p style="font-size:15px;margin:12px 0 2px">If you run a branch: sell fast, count 2 items on the shelf, close the day in minutes.</p>
+<p style="font-size:15px;margin:2px 0">If you run HQ: see every branch today, without waiting for month-end.</p>
+</div>
+
+<div class="card"><h2>How today works — 3 steps, ~5 minutes</h2>
+<p><b>1. Sell</b> — pick drug, tap +/-, confirm. Price is filled for you.<br><b>2. Count 2 items</b> — we pick 2 drugs, you count what's on the shelf.<br><b>3. Close</b> — see <span style="background:#1A9E5C;color:#fff;padding:2px 10px;border-radius:999px;font-weight:800">green (done)</span> or what to explain, then close. HQ sees it.</p>
+<p class="muted">Branch 1 • Staff: Demo Counter • <span id="today"></span> • Saved on this device for this demo.</p></div>
+
+<div class="card"><h2>1. Sell something</h2>
+<label><b>Drug</b></label><select id="drug"></select>
+<div class="qty"><button onclick="chQty(-1)">−</button><div id="qv">1</div><button onclick="chQty(1)">+</button></div>
+<label><b>Price charged (£)</b></label><input id="price" inputmode="decimal">
+<label><b>Changed the price? Tell us why (only needed if different)</b></label><input id="reason" placeholder="e.g. manager allowed discount">
+<button class="btn p" onclick="addSale()">Save sale</button>
+<p class="muted" id="priceHint"></p>
+</div>
+
+<div class="card"><h2>2. What you sold today</h2><div id="sales"></div></div>
+
+<div class="card"><h2>3. Count 2 items on the shelf</h2>
+<p class="muted">Paper can look right while the shelf is wrong. Counting 2 items a day catches that early.</p>
+<button class="btn g" onclick="pickTwo()">Show today's 2 items to count</button>
+<div id="counts"></div>
+</div>
+
+<div class="card"><h2>4. End of day — can I close?</h2>
+<p class="muted">No month-end surprise. Green means done. Yellow means explain, then you can close. Red means finish the missing step.</p>
+<div id="check"></div>
+<button class="btn p" onclick="closeDay()">Close day — I have reviewed above</button>
+<button class="btn g" onclick="resetAll()">Reset demo data</button>
+</div>
+</div>
+<script>
+const DRUGS=[
+{n:"Paracetamol 500mg",u:"Tablet",p:5.00,s:40},{n:"Amoxicillin 500mg",u:"Pack",p:12.00,s:20},
+{n:"Ibuprofen 400mg",u:"Tablet",p:4.50,s:35},{n:"Cough syrup",u:"Bottle",p:8.50,s:15},
+{n:"ORS sachets",u:"Pack",p:3.00,s:25},{n:"Metformin 500mg",u:"Tablet",p:6.00,s:30},
+{n:"Artemether tabs",u:"Strip",p:7.50,s:22},{n:"Vitamin C 100mg",u:"Tablet",p:2.50,s:50},
+{n:"Eye drops",u:"Bottle",p:9.00,s:12},{n:"Insulin vial",u:"Vial",p:25.00,s:10},
+{n:"Injection ampoule",u:"Ampoule",p:11.00,s:14},{n:"Antacid pack",u:"Pack",p:5.50,s:18}];
+let qty=1, sales=JSON.parse(localStorage.getItem('cb_sales')||'[]'),
+checks=JSON.parse(localStorage.getItem('cb_checks')||'[]'),
+closed=localStorage.getItem('cb_closed')||'';
+document.getElementById('today').textContent=new Date().toDateString();
+const sel=document.getElementById('drug');
+DRUGS.forEach((d,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`${d.n} — ${d.u} — £${d.p.toFixed(2)}`;sel.appendChild(o);});
+sel.onchange=updPrice;function updPrice(){document.getElementById('price').value=DRUGS[sel.value].p.toFixed(2);hint();}
+function hint(){const d=DRUGS[sel.value];document.getElementById('priceHint').textContent=`Normal price: £${d.p.toFixed(2)} per ${d.u}. You have ${d.s} to start today.`;}
+function chQty(d){qty=Math.max(1,qty+d);document.getElementById('qv').textContent=qty;}
+function addSale(){const d=DRUGS[sel.value],pr=parseFloat(document.getElementById('price').value),rs=document.getElementById('reason').value.trim();
+if(isNaN(pr)){alert('Enter price');return;}
+if(pr!==d.p&&!rs){alert('Price differs — reason required');return;}
+sales.push({drug:d.n,unit:d.u,qty,price:pr,reason:rs||'-',time:new Date().toLocaleTimeString(),exc:pr!==d.p});
+localStorage.setItem('cb_sales',JSON.stringify(sales));qty=1;document.getElementById('qv').textContent=1;document.getElementById('reason').value='';render();}
+function pickTwo(){const idx=[...DRUGS.keys()].sort(()=>Math.random()-.5).slice(0,2);
+checks=idx.map(i=>({drug:DRUGS[i].n,unit:DRUGS[i].u,exp:DRUGS[i].s-soldQty(DRUGS[i].n),phys:'',reason:'',done:false}));
+saveChecks();render();}
+function soldQty(n){return sales.filter(s=>s.drug===n).reduce((a,s)=>a+s.qty,0);}
+function saveChecks(){localStorage.setItem('cb_checks',JSON.stringify(checks));}
+function setPhys(i,v){checks[i].phys=v===''?'':parseInt(v);autoDiff(i);}
+function setReason(i,v){checks[i].reason=v;saveChecks();render();}
+function autoDiff(i){const c=checks[i];c.done=(c.phys!==''&&c.reason!=='')||(c.phys!==''&&c.phys===c.exp);if(c.phys!==''&&c.phys===c.exp)c.reason='agree';saveChecks();render();}
+function render(){updPrice();
+let h=sales.length?'<table><tr><th>Drug</th><th>Qty</th><th>£</th><th>Reason</th></tr>':'<p class="muted">No sales yet.</p>';
+sales.forEach(s=>{h+=`<tr><td>${s.drug} (${s.qty})</td><td>${s.qty}</td><td>£${(s.price*s.qty).toFixed(2)}${s.exc?' *':''}</td><td>${s.reason}</td></tr>`;});
+if(sales.length)h+='</table><p class="small muted">* = price exception (reason recorded, HQ notified in full build).</p>';
+document.getElementById('sales').innerHTML=h;
+let c=checks.length? '':'<p class="muted">Not picked yet.</p>';
+checks.forEach((k,i)=>{const diff=k.phys===''?'—':(k.phys-k.exp);
+c+=`<div style="border:1px solid var(--border);border-radius:12px;padding:10px;margin:8px 0"><b>${i+1}. ${k.drug}</b> <span class="muted">(${k.unit}s)</span><br>Expected: <b>${k.exp}</b> • <label>Physical count</label><input type="number" value="${k.phys}" oninput="setPhys(${i},this.value)"><label>What happened?</label><select onchange="setReason(${i},this.value)"><option value="">— choose —</option>${['agree','counting error','sale not recorded','wrong qty entered','damaged','expired','spoiled','returned','transferred','missing/unaccounted','other'].map(r=>`<option ${k.reason===r?'selected':''}>${r}</option>`).join('')}</select><p>Difference: <b>${diff}</b> ${k.phys!==''&&k.phys!==k.exp?'<span class="pill amber">Difference — review required</span>':k.phys!==''?'<span class="pill green">Agree</span>':''}</p></div>`;});
+document.getElementById('counts').innerHTML=c;
+const needSales=sales.length>0, counted=checks.filter(k=>k.phys!=='').length,
+needCounts=checks.length===2&&checks.every(k=>k.phys!==''&&(k.phys===k.exp||k.reason)),
+openDiffs=checks.filter(k=>k.phys!==''&&k.phys!==k.exp).length,
+pendExc=sales.filter(s=>s.exc).length;
+let light='red',title='Not ready to close',next='Add at least 1 sale above, then press “Pick today\u2019s 2 drugs” and enter both counts.';
+if(needSales&&needCounts&&openDiffs===0&&pendExc===0){light='green';title='All checks done — safe to close';next='Everything agrees. Press “Close day” below. You can still see today\u2019s list above.';}
+else if(needSales&&needCounts){light='amber';title='You can close, but review first';next=`You have ${openDiffs} physical difference(s)${pendExc?` and ${pendExc} price exception(s)`:''}. Each one already has a reason saved — HQ will see it. If you understand them, press “Close day”.`;}
+else if(needSales||needCounts){light='amber';title='Halfway there';next=needSales?`Sales saved. Now count ${2-counted} more drug(s) in section 3.`:`Counts started. Now record today\u2019s sales in section 1.`;}
+document.getElementById('check').innerHTML=`
+<p><span class="pill ${light}">● ${light.toUpperCase()}</span> <b>${title}</b></p>
+<p>What this means: <b>${light==='green'?'everything you needed to check today is done.':light==='amber'?'something needs your attention, but you can still close if you have explained it.':'a required step is still missing, so closing now would hide a problem.'}</b></p>
+<div style="display:grid;gap:8px;margin:10px 0">
+<div style="border:1px solid var(--border);border-radius:12px;padding:10px">1. Sales record — <b>${needSales?'Done ('+sales.length+' sales)':'Missing'}</b><br><span class="muted small">Did you record today\u2019s sales? This checks sales vs expected stock so mistakes show the same day.</span></div>
+<div style="border:1px solid var(--border);border-radius:12px;padding:10px">2. Physical count — <b>${counted}/2 counted</b>${openDiffs?` • ${openDiffs} difference(s)`:''}<br><span class="muted small">Did you count the 2 selected drugs on the shelf? Records can agree while the shelf is wrong — this catches that.</span></div>
+<div style="border:1px solid var(--border);border-radius:12px;padding:10px">3. Outstanding — <b>${openDiffs+pendExc===0?'Nothing open':openDiffs+pendExc+' item(s)'}</b><br><span class="muted small">Differences without reasons, price changes, or failed sends. They stay visible until settled — they don\u2019t disappear at close.</span></div>
+</div>
+<p><b>What to do next:</b> ${next}</p>
+<p class="small muted">Day close records who closed and when. Closed: ${closed||'not yet'}. Green = done. Amber = review then closable. Red = finish missing step first.</p>`;}
+function closeDay(){const needSales=sales.length>0,counted=checks.filter(k=>k.phys!=='').length;
+if(!needSales||counted<2){alert('Not yet: record at least 1 sale (section 1) and count both drugs (section 3). Red means a required step is missing.');return;}
+if(checks.some(k=>k.phys!==''&&k.phys!==k.exp&&!k.reason)){alert('One difference has no reason yet. Choose “What happened?” for each counted drug first.');return;}
+closed=new Date().toLocaleString();localStorage.setItem('cb_closed',closed);render();alert('Day closed by Demo Counter at '+closed+'. HQ will see today\u2019s sales, counts and reasons.');}
+function resetAll(){localStorage.removeItem('cb_sales');localStorage.removeItem('cb_checks');localStorage.removeItem('cb_closed');sales=[];checks=[];closed='';render();}
+render();
+</script></body></html>
