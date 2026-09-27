@@ -9,20 +9,19 @@
 
 ## 0. Architectural Decisions (decide first, before code)
 
-### 0.1 Recommended stack (offline-first, solo build, low-end Android)
+### 0.1 Locked stack (user spec — local-first demo)
 
-- **Branch app:** Expo React Native (Android-first) + SQLite on-device (via `expo-sqlite` / Drizzle ORM). One APK for demo.
-  - Why: must work offline for sales, counts, answers, day-close (FR-08, FR-18). Native + SQLite is proven for this. PWA offline is weaker on cheap phones.
-- **HQ web:** Next.js (same TypeScript codebase, shared validation) — simple table views only, no rankings.
-- **Backend:** Supabase (Postgres + Auth + Storage) OR Node + Postgres. Supabase preferred for solo: Auth + Row-Level Security + Storage for Excel files for free.
-  - Postgres is source of truth when online. Phone SQLite is source of truth when offline.
-- **Auth:** Phone number OR email + OTP code (Supabase Auth). First sign-in online. Cached session for offline access if already recognised on device. No new accounts offline. Individual account mandatory (FR-06, FR-32, FR-36).
-- **Time:** store `device_time` + `server_time` (server wins when synced). Show person + time everywhere.
-- **IDs:** UUID v4 client-generated for every transaction. Idempotent upsert — same UUID never appears twice at HQ (FR-23).
-- **Sync:** Outbox pattern. Each write → `outbox` row with status: `saved_on_phone / waiting / sending / sent_to_HQ / failed`. UI uses plain language only: "Saved on this phone, will send when internet returns." Never show "saved to HQ" unless acked (FR-22, FR-33).
-- **Monorepo:** `/apps/branch` (Expo), `/apps/hq` (Next.js), `/packages/shared` (Zod schemas, stock calc, traffic-light rules, unit constants), `/supabase` (migrations).
+- **App framework:** Next.js + TypeScript (single app: `/branch` + `/hq` routes, App Router)
+- **UI:** Tailwind CSS — large touch targets, beginner copy, traffic-light components
+- **Database:** PostgreSQL — local (Docker Compose for demo). Single source of truth when online.
+- **Database access:** Drizzle ORM (schema in `/db/schema.ts`, migrations in `/drizzle`)
+- **Authentication:** Better Auth — local, email + phone. Individual account mandatory. First sign-in online, cached session for offline-recognised device. No new accounts offline. Disabled status blocks writes.
+- **File storage:** Local file storage for demo (`/uploads` gitignored, original Excel kept + file ref in DB)
+- **Excel processing:** ExcelJS (recommended — MIT, better for write + template). SheetJS as fallback for reading odd HQ files. Support aliases: Drug/Medicine Name, Qty/Quantity, Unit Price/Standard Price, Form/Dosage Form.
+- **Version control:** Git + GitHub (`Jazoe-extra/Rx-cardbook`, `main`)
+- **Run:** app + DB run locally for now (`docker compose up -d db`, `npm run dev`). No cloud needed for demo.
 
-Alternative if you hate Supabase: same design works with Firebase or custom Node + Postgres. Don't use only localStorage — you need real SQLite for 12 drugs × 4 branches × daily history.
+Offline note: pure Next.js needs PWA + IndexedDB outbox to meet FR-08/FR-18 (sales/counts offline). For local demo: add service worker + `idb` outbox with statuses `saved_on_phone / waiting / sent_to_HQ / failed` and UUID idempotency. If offline on cheap phones becomes flaky, revisit Expo later — data model stays the same.
 
 ### 0.2 Data model (minimum)
 

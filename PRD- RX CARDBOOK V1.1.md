@@ -1549,6 +1549,25 @@ After these decisions, the remaining questions before development are:
 
 Also, I would keep **"random" selection genuinely random**, rather than allowing the branch to choose its two drugs. That makes the physical check much more useful without making the staff's daily job significantly harder.
 
+---
+
+**Appendix — Implementation Note (27 Sep 2026, locked)**
+
+Detailed plan: `IMPLEMENTATION_PLAN.md` (phased, design system → architecture → FR-01..FR-40 → demo 10 Oct 2026).
+
+Locked demo stack (local-first, no cloud needed):
+* App framework — Next.js + TypeScript (`/branch` + `/hq`)
+* UI — Tailwind CSS
+* Database — PostgreSQL local (Docker Compose)
+* Auth — Better Auth local (individual accounts, email OTP for demo)
+* DB access — Drizzle ORM
+* File storage — Local `/uploads` for demo (original Excel kept)
+* Excel — ExcelJS (primary), SheetJS fallback for odd HQ files
+* Version control — Git + GitHub (`Jazoe-extra/Rx-cardbook`, `main`)
+* Run — app + DB locally (`docker compose up -d db`, `npm run dev`)
+
+Offline (FR-08/FR-18) via PWA + IndexedDB outbox with UUID idempotency. PRD product rules unchanged.
+
  
 
  
