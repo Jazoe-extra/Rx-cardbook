@@ -1568,6 +1568,11 @@ Locked demo stack (local-first, no cloud needed):
 
 Offline (FR-08/FR-18) via PWA + IndexedDB outbox with UUID idempotency. PRD product rules unchanged.
 
+**Refinement Note (27 Sep 2026, OJ):**
+* Stack confirmed local-first as above — app + DB run locally for demo, no paid cloud needed.
+* Design preview (`design-preview.html`) — background changed to light blue gradient (#EAF4FF → #DCEBFF), white cards with soft shadow, headings in pharmacy blue (#0B4EA2), teal gradient buttons. Reason: more inviting, less dull, still beginner-friendly with 56px targets and plain language.
+* Product rules unchanged — 2 daily checks, random 2-drug count, no auto-adjust, neutral language, individual accounts.
+
  
 
  
