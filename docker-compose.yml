@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: cardbook-db
+    environment:
+      POSTGRES_USER: cardbook
+      POSTGRES_PASSWORD: cardbook
+      POSTGRES_DB: cardbook
+    ports:
+      - "5432:5432"
+    volumes:
+      - cardbook-pg:/var/lib/postgresql/data
+
+volumes:
+  cardbook-pg:

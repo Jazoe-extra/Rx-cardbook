@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { @apply bg-[#EAF4FF] text-slate-900; }
+.card { @apply bg-white border border-[#C9D9F2] rounded-2xl p-5 my-3 shadow-lg; }
+.btn { @apply w-full min-h-[56px] rounded-2xl text-lg font-extrabold my-2; }
+.btn-primary { @apply bg-teal-700 text-white; }
