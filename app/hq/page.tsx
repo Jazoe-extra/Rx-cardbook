@@ -6,11 +6,13 @@ export default function HqPage() {
   const [counts, setCounts] = useState<any[]>([]);
   const [days, setDays] = useState<any[]>([]);
   const [drugs, setDrugs] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
   useEffect(() => {
     fetch("/api/sales").then((r) => r.json()).then(setSales);
     fetch("/api/counts").then((r) => r.json()).then(setCounts);
     fetch("/api/day").then((r) => r.json()).then(setDays);
     fetch("/api/drugs").then((r) => r.json()).then(setDrugs);
+    fetch("/api/branches").then((r) => r.json()).then(setBranches);
   }, []);
   const counted = counts.filter((c: any) => c.phys != null).length;
   const diffs = counts.filter((c: any) => c.phys != null && c.phys !== c.exp).length;
@@ -30,6 +32,26 @@ export default function HqPage() {
       </div>
       <div className="card"><h2 className="font-bold">Day closes ({days.length})</h2>
         {days.map((d: any) => <p key={d.id}>• {d.day} — {d.light} by {d.closedBy}</p>)}
+      </div>
+      <div className="card"><h2 className="font-bold">Branch comparison — today sales (Angela approved, oversight only)</h2>
+        {(() => {
+          const sum = branches.reduce((a: number, b: any) => a + Number(b.total || 0), 0) || 1;
+          const colors = ["#0B4EA2", "#12A68F", "#C77D0A", "#8E44AD"];
+          let acc = 0;
+          const segs = branches.map((b: any, i: number) => {
+            const pct = (Number(b.total || 0) / sum) * 100;
+            const s = `${colors[i % colors.length]} ${acc}% ${acc + pct}%`;
+            acc += pct;
+            return s;
+          });
+          return (<>
+            <div style={{ width: 180, height: 180, borderRadius: "50%", background: `conic-gradient(${segs.join(",")})`, margin: "12px auto" }} />
+            {branches.map((b: any, i: number) => (
+              <p key={b.id}><span style={{ display: "inline-block", width: 12, height: 12, background: colors[i % colors.length], borderRadius: 3, marginRight: 6 }} />{b.name}: £{Number(b.total || 0).toFixed(2)}</p>
+            ))}
+            <p className="text-xs text-slate-500">Oversight only — not staff performance. PRD no-rankings exception approved by Angela.</p>
+          </>);
+        })()}
       </div>
       <div className="card"><h2 className="font-bold">Catalogue ({drugs.length})</h2>
         <p className="text-sm"><a href="/hq/catalogue">Open table</a> • <a href="/hq/import">Import Excel</a> • <a href="/branch">Branch page</a></p>
