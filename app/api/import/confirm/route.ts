@@ -6,14 +6,12 @@ export async function POST(req: Request) {
   try {
     const { rows } = await req.json();
     if (!Array.isArray(rows)) return NextResponse.json({ error: "rows required" }, { status: 400 });
-    const ALLOWED = ["Tablet", "Pack", "Strip", "Bottle", "Ampoule", "Vial", "Other"];
+    const ALLOWED = ["Tablet", "Pack", "Strip", "Bottle", "Ampoule", "Vial", "Sachet", "Other"];
     const mapUnit = (u: string) => {
       if (!u) return "Other";
       const t = u.trim();
       const hit = ALLOWED.find((a) => a.toLowerCase() === t.toLowerCase());
-      if (hit) return hit;
-      if (/sachet/i.test(t)) return "Other";
-      return "Other";
+      return hit || "Other";
     };
     let added = 0, skipped: any[] = [];
     for (const r of rows) {
