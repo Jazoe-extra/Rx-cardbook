@@ -2,7 +2,7 @@ import { pgTable, text, uuid, integer, numeric, timestamp, pgEnum } from "drizzl
 
 export const roleEnum = pgEnum("role", ["counter", "hq_approver", "admin"]);
 export const statusEnum = pgEnum("status", ["active", "disabled"]);
-export const unitEnum = pgEnum("stock_unit", ["Tablet", "Pack", "Strip", "Bottle", "Ampoule", "Vial", "Other"]);
+export const unitEnum = pgEnum("stock_unit", ["Tablet", "Pack", "Strip", "Bottle", "Ampoule", "Vial", "Sachet", "Other"]);
 
 export const branches = pgTable("branches", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -51,4 +51,24 @@ export const stockMovements = pgTable("stock_movements", {
   actorId: uuid("actor_id").references(() => users.id),
   deviceTime: timestamp("device_time").defaultNow(),
   serverTime: timestamp("server_time").defaultNow()
+});
+
+export const physicalChecks = pgTable("physical_checks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  branchId: uuid("branch_id").references(() => branches.id).notNull(),
+  drugId: uuid("drug_id").references(() => drugs.id).notNull(),
+  day: text("day").notNull(),
+  expectedQty: integer("expected_qty").notNull(),
+  physicalQty: integer("physical_qty"),
+  reason: text("reason"),
+  countedBy: text("counted_by").default("Demo Counter")
+});
+
+export const dayCloses = pgTable("day_closes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  branchId: uuid("branch_id").references(() => branches.id).notNull(),
+  day: text("day").notNull(),
+  closedBy: text("closed_by").default("Demo Counter"),
+  light: text("light").notNull(),
+  closedAt: timestamp("closed_at").defaultNow()
 });
