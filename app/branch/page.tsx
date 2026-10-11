@@ -47,10 +47,15 @@ export default function BranchPage() {
     load();
   };
   const close = async (light: string) => {
-    const r = await fetch("/api/day", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ light }) });
-    const j = await r.json();
-    if (!r.ok) { setMsg(j.error); return; }
-    setMsg(`Day closed (${j.light}) by Demo Counter. HQ will see it.`);
+    setMsg("Closing day...");
+    try {
+      const r = await fetch("/api/day", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ light }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { setMsg("Close blocked: " + (j.error || r.status)); return; }
+      setMsg(`Day closed (${j.light}) by Demo Counter at ${new Date().toLocaleTimeString()}. HQ will see today's sales, counts and reasons.`);
+    } catch (e: any) {
+      setMsg("Close failed: no server. Is dev running?");
+    }
   };
 
   const counted = counts.filter((c) => c.phys != null).length;
