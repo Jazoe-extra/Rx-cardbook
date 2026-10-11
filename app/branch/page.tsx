@@ -83,7 +83,7 @@ export default function BranchPage() {
       </div>
 
       <div className="card"><h2 className="font-bold">What you sold ({sales.length})</h2>
-        {sales.map((s: any) => <p key={s.id}>• {s.qty}x {s.drug} — £{s.price}</p>)}
+        {sales.map((s: any) => <p key={s.id}>• {s.qty}x {s.drug} — £{(Number(s.price) * Number(s.qty)).toFixed(2)} <span className="text-xs text-slate-500">({s.qty}x £{Number(s.price).toFixed(2)})</span></p>)}
       </div>
 
       <div className="card"><h2 className="font-bold">2. Count 2 items on the shelf</h2>
