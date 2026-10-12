@@ -1,0 +1,15 @@
+{
+  "name": "Cardbook — Branch Pharmacy",
+  "short_name": "Cardbook",
+  "description": "Daily sales book for branch pharmacies — replaces paper, catches mistakes the same day.",
+  "start_url": "/branch",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EAF4FF",
+  "theme_color": "#0B4EA2",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

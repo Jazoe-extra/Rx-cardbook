@@ -10,6 +10,9 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/cli": "^6.2.2",
+    "@capacitor/core": "^6.2.2",
     "better-auth": "^1.1.0",
     "drizzle-orm": "^0.45.4",
     "exceljs": "^4.4.0",
