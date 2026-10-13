@@ -10,20 +10,31 @@ async function demoBranch() {
   return b;
 }
 
-export async function GET() {
-  const day = new Date().toDateString();
-  const br = await demoBranch();
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const bn = searchParams.get("branch");
+  let br = null;
+  if (bn) {
+    const found = await db.select().from(branches).where(eq(branches.name, bn)).limit(1);
+    br = found.length ? found[0] : (await db.insert(branches).values({ name: bn }).returning())[0];
+  }
   const rows = await db.select({ c: physicalChecks, d: drugs }).from(physicalChecks)
     .leftJoin(drugs, eq(physicalChecks.drugId, drugs.id));
-  return NextResponse.json(rows.map((r) => ({ id: r.c.id, drug: r.d?.name, unit: r.d?.stockUnit, exp: r.c.expectedQty, phys: r.c.physicalQty, reason: r.c.reason, day: r.c.day })));
+  const list = br ? rows.filter((r) => r.c.branchId === br.id) : rows;
+  return NextResponse.json(list.map((r) => ({ id: r.c.id, drug: r.d?.name, unit: r.d?.stockUnit, exp: r.c.expectedQty, phys: r.c.physicalQty, reason: r.c.reason, day: r.c.day })));
 }
 
 export async function POST(req: Request) {
-  const { action, id, physicalQty, reason } = await req.json();
-  const br = await demoBranch();
+  const { action, id, physicalQty, reason, branch } = await req.json();
+  const br = await (async () => {
+    if (!branch) return demoBranch();
+    const found = await db.select().from(branches).where(eq(branches.name, branch)).limit(1);
+    if (found.length) return found[0];
+    const [b] = await db.insert(branches).values({ name: branch }).returning();
+    return b;
+  })();
   const day = new Date().toDateString();
-  if (action === "pick") {
-    const all = await db.select().from(drugs).limit(100);
+  if (action === "pick") {    const all = await db.select().from(drugs).limit(100);
     if (all.length < 2) return NextResponse.json({ error: "Need 2+ drugs in catalogue" }, { status: 400 });
     const two = [...all].sort(() => Math.random() - 0.5).slice(0, 2);
     const out = [];
