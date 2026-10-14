@@ -16,6 +16,7 @@ export default function BranchPage() {
   const [counts, setCounts] = useState<any[]>([]);
   const [msg, setMsg] = useState("");
   const [closeMsg, setCloseMsg] = useState("");
+  const [sellErr, setSellErr] = useState("");
 
   const load = async (br = branch) => {
     const d = await fetch("/api/drugs").then((r) => r.json());
@@ -35,15 +36,16 @@ export default function BranchPage() {
   const switchBranch = (b: string) => { setBranch(b); setCloseMsg(""); setMsg("You are now in " + b + ". Sales and counts below are for " + b + "."); load(b); };
 
   const sell = async () => {
-    if (!drug) { setMsg("Pick a drug first — catalogue is empty. Import at /hq/import."); return; }
-    if (!qty || qty < 1) { setMsg("Quantity must be 1+."); return; }
+    setSellErr("");
+    if (!drug) { setSellErr("⛔ Pick a drug first — catalogue is empty. Import at /hq/import."); return; }
+    if (!qty || qty < 1) { setSellErr("⛔ Quantity must be 1 or more."); return; }
     setMsg("Saving sale...");
     const r = await fetch("/api/sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ drugId: drug, qty, price: price || sel?.standardPrice, reason, branch }) });
     let j: any = {};
     try { j = await r.json(); } catch { j = { error: "server error" }; }
-    if (!r.ok) { setMsg("Sale blocked: " + (j.error || r.status)); return; }
+    if (!r.ok) { setSellErr("⛔ Sale blocked: " + (j.error || r.status)); setMsg(""); return; }
     setMsg(`Saved ${qty}x ${sel?.name} in ${branch} — ${cur}${total.toFixed(2)}.`);
-    setQty(1); setReason(""); if (sel) setPrice(sel.standardPrice); load();
+    setSellErr(""); setQty(1); setReason(""); if (sel) setPrice(sel.standardPrice); load();
   };
   const pick = async () => {
     setMsg("Picking today's 2 items for " + branch + "...");
@@ -107,6 +109,7 @@ export default function BranchPage() {
           <input className="w-full min-h-[56px] border rounded-xl p-2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder={changed ? `You changed ${cur}${sel?.standardPrice} — tell us why` : "e.g. manager allowed discount"} />
         </div>
         <button className="btn btn-primary" disabled={!drug} onClick={sell}>Save sale — {cur}{total.toFixed(2)} ({qty}x {cur}{unitPrice.toFixed(2)}){changed ? " * changed" : ""}</button>
+        {sellErr && <p style={{ background: "#FBE5E5", border: "2px solid #C93A3A", borderRadius: 12, padding: 12, fontWeight: 800, color: "#8F1F1F" }}>⛔ {sellErr.replace(/^⛔ /, "")}</p>}
       </div>
 
       <div className="card"><h2 className="font-bold">What {branch} sold today</h2>

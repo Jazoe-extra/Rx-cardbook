@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { stockMovements, drugs } from "@/db/schema";
+import { stockMovements, drugs, branches } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET() {
-  const rows = await db.select({ m: stockMovements, d: drugs }).from(stockMovements).leftJoin(drugs, eq(stockMovements.drugId, drugs.id)).limit(200);
+  const rows = await db.select({ m: stockMovements, d: drugs, b: branches }).from(stockMovements).leftJoin(drugs, eq(stockMovements.drugId, drugs.id)).leftJoin(branches, eq(stockMovements.branchId, branches.id)).limit(200);
   const out = rows.filter((r) => (r.m.reason && r.m.reason !== "-") || r.m.type === "refund").map((r) => ({
-    id: r.m.id, drug: r.d?.name, qty: r.m.qty, price: r.m.priceCharged, reason: r.m.reason, type: r.m.type
+    id: r.m.id, drug: r.d?.name, qty: r.m.qty, price: r.m.priceCharged, reason: r.m.reason, type: r.m.type, branch: r.b?.name || "Branch 1"
   }));
   return NextResponse.json(out);
 }
